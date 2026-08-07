@@ -1,11 +1,15 @@
 name: Android CI
 
-# APK'lar her push'ta derlenir ve "Artifacts" bolumune yuklenir.
+# Her push'ta APK'lar derlenir ve tek bir "latest" Release'e yuklenir.
+# Ayni Release uzerine yazildigi icin dosyalar birikmez -> depolama dolmaz.
 on:
   push:
     branches: [ "**" ]
-  pull_request:
   workflow_dispatch:
+
+# Release olusturup guncelleyebilmek icin yazma izni gerekir.
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -28,16 +32,28 @@ jobs:
       - name: Build debug APKs
         run: ./gradlew :mobile:assembleDebug :wear:assembleDebug --no-daemon --stacktrace
 
-      - name: Upload mobile (telefon) APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-debug-apk
-          path: mobile/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+      - name: APK'lari topla ve adlandir
+        run: |
+          mkdir -p dist
+          cp mobile/build/outputs/apk/debug/*.apk dist/telefon-mobile-debug.apk
+          cp wear/build/outputs/apk/debug/*.apk   dist/saat-wear-debug.apk
+          ls -l dist
 
-      - name: Upload wear (saat) APK
-        uses: actions/upload-artifact@v4
+      - name: "latest" Release'i olustur/guncelle
+        uses: softprops/action-gh-release@v2
         with:
-          name: wear-debug-apk
-          path: wear/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+          tag_name: latest
+          name: En son APK'lar (latest)
+          body: |
+            Bu Release her push'ta otomatik guncellenir; APK'lar en son
+            derlemeye aittir.
+
+            - **telefon-mobile-debug.apk** -> telefona kur
+            - **saat-wear-debug.apk** -> Wear OS saate kur
+
+            Commit: ${{ github.sha }}
+          prerelease: true
+          make_latest: true
+          target_commitish: ${{ github.sha }}
+          files: dist/*.apk
+          fail_on_unmatched_files: true
