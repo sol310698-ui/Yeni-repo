@@ -39,7 +39,7 @@ jobs:
           cp wear/build/outputs/apk/debug/*.apk   dist/saat-wear-debug.apk
           ls -l dist
 
-      - name: "latest" Release'i olustur/guncelle
+      - name: latest Release olustur veya guncelle
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
