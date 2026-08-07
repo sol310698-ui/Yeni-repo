@@ -1,9 +1,9 @@
 name: Android CI
 
-# Bu workflow proje kendi deposuna tasindiginda (repo koku olarak) calisir.
+# APK'lar her push'ta derlenir ve "Artifacts" bolumune yuklenir.
 on:
   push:
-    branches: [ main ]
+    branches: [ "**" ]
   pull_request:
   workflow_dispatch:
 
@@ -27,3 +27,17 @@ jobs:
 
       - name: Build debug APKs
         run: ./gradlew :mobile:assembleDebug :wear:assembleDebug --no-daemon --stacktrace
+
+      - name: Upload mobile (telefon) APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-debug-apk
+          path: mobile/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload wear (saat) APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wear-debug-apk
+          path: wear/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
