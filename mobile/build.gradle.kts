@@ -17,6 +17,17 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // mobile ve wear AYNI keystore ile imzalanmali; Wear OS Data Layer
+        // ancak ayni imzali uygulamalar arasinda mesaj teslim eder.
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "shareddebug"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
