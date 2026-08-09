@@ -13,43 +13,43 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Karsi cihazdan gelen komut mesajlarini dinleyen servis.
+ * Karsi cihazdan gelen mesajlari dinleyen servis (hem telefon hem saat).
  *
- * Hem telefon hem de saat uygulamasi bu servisi kendi AndroidManifest'inde
- * `com.google.android.gms.wearable.MESSAGE_RECEIVED` intent-filter'i ile
- * kaydeder. Google Play Services, `/command` yoluna bir mesaj geldiginde bu
- * servisi otomatik olarak baslatir; uygulama kapali olsa bile calisir.
- *
- * Gelen komutlar:
- *  - [CommandBus] uzerinden ekrandaki Activity'ye iletilir,
- *  - PING ise otomatik olarak PONG cevabi gonderilir,
- *  - VIBRATE ise cihaz titretilir.
+ * - [CommandProtocol.PATH_PHOTO]: gelen JPEG [PhotoBus]'a yayilir.
+ * - [CommandProtocol.PATH_COMMAND]: metin komutu once [CommandBus]'a yayilir
+ *   (ekranda gostermek icin), sonra tum cihazlarda gecerli yerlesik tepkiler
+ *   (PING->PONG, VIBRATE) uygulanir ve son olarak cihaza ozel
+ *   [CommandRegistry.executor]'a devredilir (telefon: fener/kilit/konum vb.).
  */
 class CommandListenerService : WearableListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onMessageReceived(event: MessageEvent) {
-        if (event.path != CommandProtocol.PATH_COMMAND) {
-            return
+        when (event.path) {
+            CommandProtocol.PATH_PHOTO -> {
+                PhotoBus.publish(event.data)
+                return
+            }
+            CommandProtocol.PATH_COMMAND -> {
+                val command = String(event.data, Charsets.UTF_8)
+                CommandBus.publish(command)
+                handleBuiltIn(command)
+                CommandRegistry.executor?.onCommand(applicationContext, command)
+            }
         }
+    }
 
-        val command = String(event.data, Charsets.UTF_8)
-
-        // Ekrandaki Activity'ye ilet.
-        CommandBus.publish(command)
-
-        // Bazi komutlara otomatik tepki ver.
+    /** Her iki cihazda da gecerli yerlesik tepkiler. */
+    private fun handleBuiltIn(command: String) {
         when (command) {
-            CommandProtocol.CMD_PING -> respondPong()
+            CommandProtocol.CMD_PING -> respond(CommandProtocol.CMD_PONG)
             CommandProtocol.CMD_VIBRATE -> vibrate()
         }
     }
 
-    private fun respondPong() {
-        scope.launch {
-            runCatching { CommandSender.send(applicationContext, CommandProtocol.CMD_PONG) }
-        }
+    private fun respond(command: String) {
+        scope.launch { runCatching { CommandSender.send(applicationContext, command) } }
     }
 
     private fun vibrate() {
@@ -64,8 +64,7 @@ class CommandListenerService : WearableListenerService() {
 
     private fun resolveVibrator(): Vibrator? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = getSystemService(VibratorManager::class.java)
-            manager?.defaultVibrator
+            getSystemService(VibratorManager::class.java)?.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
             getSystemService(Vibrator::class.java)

@@ -1,8 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Wear Commands (Saat)</string>
-    <string name="btn_ping">PING</string>
-    <string name="btn_vibrate">Telefonu titret</string>
-    <string name="btn_hello">HELLO</string>
     <string name="last_empty">Komut bekleniyor…</string>
+    <string name="preview_desc">Fotograf onizleme</string>
+    <string name="no_phone">Bagli telefon yok</string>
+    <string name="photo_ready">Foto geldi</string>
+
+    <string name="btn_torch_on">Fener AC</string>
+    <string name="btn_torch_off">Fener KAPAT</string>
+    <string name="btn_alarm_on">Alarm CAL</string>
+    <string name="btn_alarm_off">Alarm DURDUR</string>
+    <string name="btn_lock">Kilitle</string>
+    <string name="btn_location">Konum</string>
+    <string name="btn_message">Ekrana mesaj</string>
+    <string name="btn_photo">Foto cek</string>
+    <string name="btn_audio_on">Ses kaydi BASLAT</string>
+    <string name="btn_audio_off">Ses kaydi DURDUR</string>
+    <string name="btn_video_on">Video BASLAT</string>
+    <string name="btn_video_off">Video DURDUR</string>
+    <string name="btn_wipe">Veri sil</string>
+
+    <string name="send">Gonder</string>
+    <string name="cancel">Vazgec</string>
+    <string name="msg_hint">Mesaj yaz</string>
+    <string name="pin_hint">PIN</string>
+    <string name="wipe_confirm_title">Veri silinsin mi?</string>
+    <string name="wipe_confirm_msg">Bu islem telefondaki tum veriyi siler. Onaylamak icin PIN gir.</string>
+    <string name="wipe_confirm_yes">SIL</string>
 </resources>
