@@ -1,26 +1,34 @@
 package com.example.wearcommands.mobile
 
 import android.app.Service
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.IBinder
+import android.os.ParcelFileDescriptor
+import android.provider.MediaStore
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Ekranda hicbir sey gostermeden ortam sesini kaydeder (gizli). Kayit
- * telefonun ozel klasorune yazilir: Android/data/.../files/kayitlar/
- * ACTION_START ile baslar, ACTION_STOP ile durur.
+ * Ekranda hicbir sey gostermeden ortam sesini kaydeder (gizli).
+ *
+ * Kayit, dosya yoneticisi/Muzik uygulamasindan gorunen ortak klasore yazilir:
+ * Android 10+ -> Music/WearCommands (MediaStore), altinda ise dogrudan
+ * paylasilan Music/WearCommands klasorune.
  */
 class AudioRecordService : Service() {
 
     private var recorder: MediaRecorder? = null
-    private var outFile: File? = null
+    private var pfd: ParcelFileDescriptor? = null
+    private var pendingUri: Uri? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -33,17 +41,33 @@ class AudioRecordService : Service() {
     private fun start() {
         startForegroundCompat()
         runCatching {
-            val dir = File(getExternalFilesDir(null), "kayitlar").apply { mkdirs() }
-            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val f = File(dir, "ses_$stamp.m4a")
-            outFile = f
+            val name = "ses_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".m4a"
 
             @Suppress("DEPRECATION")
             val r = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaRecorder(this) else MediaRecorder()
             r.setAudioSource(MediaRecorder.AudioSource.MIC)
             r.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             r.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            r.setOutputFile(f.absolutePath)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Audio.Media.DISPLAY_NAME, name)
+                    put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
+                    put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/WearCommands")
+                    put(MediaStore.Audio.Media.IS_PENDING, 1)
+                }
+                val uri = contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+                pendingUri = uri
+                val fd = uri?.let { contentResolver.openFileDescriptor(it, "w") }
+                pfd = fd
+                r.setOutputFile(fd!!.fileDescriptor)
+            } else {
+                @Suppress("DEPRECATION")
+                val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "WearCommands")
+                dir.mkdirs()
+                r.setOutputFile(File(dir, name).absolutePath)
+            }
+
             r.prepare()
             r.start()
             recorder = r
@@ -63,6 +87,16 @@ class AudioRecordService : Service() {
         recorder?.runCatching { stop() }
         recorder?.release()
         recorder = null
+        pfd?.runCatching { close() }
+        pfd = null
+        // MediaStore kaydini gorunur yap.
+        pendingUri?.let { uri ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val done = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                runCatching { contentResolver.update(uri, done, null, null) }
+            }
+        }
+        pendingUri = null
         super.onDestroy()
     }
 

@@ -1,14 +1,18 @@
 package com.example.wearcommands.mobile
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -72,12 +76,28 @@ class VideoService : LifecycleService() {
                 provider.bindToLifecycle(this, selector, videoCapture)
             }.onFailure { stopSelf(); return@addListener }
 
-            val dir = File(getExternalFilesDir(null), "kayitlar").apply { mkdirs() }
             val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val file = File(dir, "video_$stamp.mp4")
-            val options = FileOutputOptions.Builder(file).build()
+            val name = "video_$stamp.mp4"
 
-            var pending = videoCapture.output.prepareRecording(this, options)
+            var pending = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                    put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                    put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/WearCommands")
+                }
+                val opts = MediaStoreOutputOptions.Builder(
+                    contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                ).setContentValues(values).build()
+                videoCapture.output.prepareRecording(this, opts)
+            } else {
+                @Suppress("DEPRECATION")
+                val dir = File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+                    "WearCommands"
+                ).apply { mkdirs() }
+                val opts = FileOutputOptions.Builder(File(dir, name)).build()
+                videoCapture.output.prepareRecording(this, opts)
+            }
             if (hasAudio()) pending = pending.withAudioEnabled()
 
             recording = pending.start(ContextCompat.getMainExecutor(this)) { event ->
