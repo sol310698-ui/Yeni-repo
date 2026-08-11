@@ -76,6 +76,15 @@
             </intent-filter>
         </service>
 
+        <!-- Sarj cikarilinca saate uyari -->
+        <receiver
+            android:name=".PowerReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".AlarmService"
             android:exported="false"

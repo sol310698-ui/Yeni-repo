@@ -50,6 +50,9 @@ object CommandProtocol {
     /** "HATA:<mesaj>". */
     const val RSP_ERROR = "HATA"
 
+    /** "UYARI:<mesaj>" — saatte one cikan uyari (titresim + tam ekran). */
+    const val RSP_ALERT = "UYARI"
+
     /** "AD:deger" komutunu (ad, deger) ciftine ayirir; deger yoksa bos string. */
     fun split(command: String): Pair<String, String> {
         val i = command.indexOf(':')

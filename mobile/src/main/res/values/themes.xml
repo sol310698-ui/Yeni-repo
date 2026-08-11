@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.WearCommands" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/brand</item>
-        <item name="colorOnPrimary">@color/on_brand</item>
-        <item name="colorPrimaryContainer">@color/brand_container</item>
-        <item name="colorOnPrimaryContainer">@color/on_brand_container</item>
-        <item name="colorSecondary">@color/brand</item>
-        <item name="colorSecondaryContainer">@color/brand_container</item>
-        <item name="colorOnSecondaryContainer">@color/on_brand_container</item>
-        <item name="android:navigationBarColor">?attr/colorSurface</item>
+    <style name="Theme.WearCommands" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/brand_dark</item>
+        <item name="colorOnPrimary">@color/on_brand_dark</item>
+        <item name="colorPrimaryContainer">@color/brand_container_dark</item>
+        <item name="colorOnPrimaryContainer">@color/on_brand_container_dark</item>
+        <item name="android:windowBackground">@drawable/bg_app</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

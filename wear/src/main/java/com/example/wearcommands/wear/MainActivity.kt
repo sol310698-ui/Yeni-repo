@@ -1,8 +1,13 @@
 package com.example.wearcommands.wear
 
 import android.app.RemoteInput
+import android.content.Context
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -14,12 +19,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,14 +64,8 @@ import com.example.wearcommands.shared.CommandProtocol
 import com.example.wearcommands.shared.CommandSender
 import com.example.wearcommands.shared.PhotoBus
 import kotlinx.coroutines.launch
+import java.io.File
 
-/**
- * Saat arayuzu (Jetpack Compose for Wear OS).
- *
- * Kavisli liste (ScalingLazyColumn): merkeze gelen buton buyuk bir daire
- * olarak one cikar, kenardakiler kuculur; Samsung kadrani (bezel) veya parmak
- * ile kaydirinca butonlar alttan uste akar.
- */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,8 +95,12 @@ private fun WearApp() {
         var audioOn by remember { mutableStateOf(false) }
         var videoOn by remember { mutableStateOf(false) }
 
-        var photo by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+        var photos by remember { mutableStateOf(PhotoStore.list(context)) }
+        var galleryOpen by remember { mutableStateOf(false) }
+        var viewerFile by remember { mutableStateOf<File?>(null) }
+        var previewFile by remember { mutableStateOf<File?>(null) }
         var info by remember { mutableStateOf<String?>(null) }
+        var lastRotary by remember { mutableStateOf(0L) }
 
         fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
 
@@ -103,7 +112,6 @@ private fun WearApp() {
             }
         }
 
-        // Metin girisi (mesaj) sonucu
         val messageLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -111,7 +119,6 @@ private fun WearApp() {
                 ?.getCharSequence(KEY_MSG)?.toString()
             if (!text.isNullOrBlank()) send(CommandProtocol.build(CommandProtocol.CMD_MESSAGE, text))
         }
-        // PIN girisi (veri silme) sonucu
         val wipeLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -127,7 +134,6 @@ private fun WearApp() {
             launch(intent)
         }
 
-        // Telefondan gelen durum/konum bilgisi
         LaunchedEffect(Unit) {
             CommandBus.incoming.collect { command ->
                 val (name, value) = CommandProtocol.split(command)
@@ -135,130 +141,233 @@ private fun WearApp() {
                     CommandProtocol.RSP_LOCATION -> info = "Konum:\n$value"
                     CommandProtocol.RSP_ERROR -> toast("Hata: $value")
                     CommandProtocol.RSP_STATUS -> toast(value)
+                    CommandProtocol.RSP_ALERT -> { vibrate(context); info = "⚠\n$value" }
                 }
             }
         }
-        // Telefondan gelen fotograf
         LaunchedEffect(Unit) {
             PhotoBus.incoming.collect { jpeg ->
-                photo = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size)
+                val f = PhotoStore.save(context, jpeg)
+                photos = PhotoStore.list(context)
+                previewFile = f
             }
         }
         LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
 
-        var lastRotary by remember { mutableStateOf(0L) }
-
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        ScalingLazyColumn(
-            state = listState,
-            // Parmakla kaydirinca en yakin buton ortaya oturur (snap).
-            flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .onRotaryScrollEvent { event ->
-                    // Kadran bir tik donunce bir sonraki buton tam ortaya gelir.
-                    val now = System.currentTimeMillis()
-                    if (now - lastRotary > 120) {
-                        lastRotary = now
-                        val step = if (event.verticalScrollPixels > 0) 1 else -1
-                        val target = (listState.centerItemIndex + step).coerceIn(0, ITEM_COUNT - 1)
-                        scope.launch { listState.animateScrollToItem(target) }
-                    }
-                    true
-                }
-                .focusRequester(focusRequester)
-                .focusable(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(top = 60.dp, bottom = 60.dp)
-        ) {
-            item {
-                CircleAction(if (torchOn) "Fener\nKAPAT" else "Fener\nAÇ") {
-                    torchOn = !torchOn
-                    send(if (torchOn) CommandProtocol.CMD_TORCH_ON else CommandProtocol.CMD_TORCH_OFF)
-                }
-            }
-            item {
-                CircleAction(if (alarmOn) "Alarm\nDURDUR" else "Alarm\nÇAL") {
-                    alarmOn = !alarmOn
-                    send(if (alarmOn) CommandProtocol.CMD_ALARM_ON else CommandProtocol.CMD_ALARM_OFF)
-                }
-            }
-            item { CircleAction("Kilitle") { send(CommandProtocol.CMD_LOCK) } }
-            item { CircleAction("Konum") { send(CommandProtocol.CMD_LOCATION) } }
-            item {
-                CircleAction("Ekrana\nmesaj") {
-                    launchInput(KEY_MSG, "Mesaj") { messageLauncher.launch(it) }
-                }
-            }
-            item { CircleAction("Foto\nçek") { send(CommandProtocol.CMD_PHOTO) } }
-            item {
-                CircleAction(if (audioOn) "Ses\nDURDUR" else "Ses\nkaydı") {
-                    audioOn = !audioOn
-                    send(if (audioOn) CommandProtocol.CMD_AUDIO_START else CommandProtocol.CMD_AUDIO_STOP)
-                }
-            }
-            item {
-                CircleAction(if (videoOn) "Video\nDURDUR" else "Video\nkaydı") {
-                    videoOn = !videoOn
-                    send(if (videoOn) CommandProtocol.CMD_VIDEO_START else CommandProtocol.CMD_VIDEO_STOP)
-                }
-            }
-            item {
-                CircleAction("Veri\nsil", danger = true) {
-                    launchInput(KEY_PIN, "PIN") { wipeLauncher.launch(it) }
-                }
-            }
-        }
 
-        // Fotograf onizleme (tam ekran; dokununca kapanir)
-        photo?.let { bmp ->
-            Box(
+            ScalingLazyColumn(
+                state = listState,
+                flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black)
-                    .clickable { photo = null },
-                contentAlignment = Alignment.Center
+                    .onRotaryScrollEvent { event ->
+                        val now = System.currentTimeMillis()
+                        if (now - lastRotary > 120) {
+                            lastRotary = now
+                            val step = if (event.verticalScrollPixels > 0) 1 else -1
+                            val target = (listState.centerItemIndex + step).coerceIn(0, ITEM_COUNT - 1)
+                            scope.launch { listState.animateScrollToItem(target) }
+                        }
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(top = 60.dp, bottom = 60.dp)
             ) {
-                Image(
-                    bitmap = bmp.asImageBitmap(),
-                    contentDescription = "Foto onizleme",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
+                item { PhotoHeader(count = photos.size) { galleryOpen = true } }
+                item {
+                    CircleAction(if (torchOn) "Fener\nKAPAT" else "Fener\nAÇ") {
+                        torchOn = !torchOn
+                        send(if (torchOn) CommandProtocol.CMD_TORCH_ON else CommandProtocol.CMD_TORCH_OFF)
+                    }
+                }
+                item {
+                    CircleAction(if (alarmOn) "Alarm\nDURDUR" else "Alarm\nÇAL") {
+                        alarmOn = !alarmOn
+                        send(if (alarmOn) CommandProtocol.CMD_ALARM_ON else CommandProtocol.CMD_ALARM_OFF)
+                    }
+                }
+                item { CircleAction("Kilitle") { send(CommandProtocol.CMD_LOCK) } }
+                item { CircleAction("Konum") { send(CommandProtocol.CMD_LOCATION) } }
+                item {
+                    CircleAction("Ekrana\nmesaj") {
+                        launchInput(KEY_MSG, "Mesaj") { messageLauncher.launch(it) }
+                    }
+                }
+                item { CircleAction("Foto\nçek") { send(CommandProtocol.CMD_PHOTO) } }
+                item {
+                    CircleAction(if (audioOn) "Ses\nDURDUR" else "Ses\nkaydı") {
+                        audioOn = !audioOn
+                        send(if (audioOn) CommandProtocol.CMD_AUDIO_START else CommandProtocol.CMD_AUDIO_STOP)
+                    }
+                }
+                item {
+                    CircleAction(if (videoOn) "Video\nDURDUR" else "Video\nkaydı") {
+                        videoOn = !videoOn
+                        send(if (videoOn) CommandProtocol.CMD_VIDEO_START else CommandProtocol.CMD_VIDEO_STOP)
+                    }
+                }
+                item {
+                    CircleAction("Veri\nsil", danger = true) {
+                        launchInput(KEY_PIN, "PIN") { wipeLauncher.launch(it) }
+                    }
+                }
             }
-        }
 
-        // Bilgi (konum) katmani
-        info?.let { text ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xE6000000))
-                    .clickable { info = null },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = text,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(20.dp)
+            // Yeni foto kucuk onizleme (dokun -> tam ekran)
+            if (previewFile != null && viewerFile == null && !galleryOpen) {
+                val f = previewFile!!
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xCC000000))
+                        .clickable { previewFile = null },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        PhotoThumb(f, size = 130.dp) { viewerFile = f; previewFile = null }
+                        Spacer(Modifier.height(10.dp))
+                        Text("Dokun: tam ekran", color = Color.White, fontSize = 13.sp)
+                    }
+                }
+            }
+
+            // Galeri (eski fotograflar)
+            if (galleryOpen && viewerFile == null) {
+                GalleryScreen(
+                    photos = photos,
+                    onOpen = { viewerFile = it },
+                    onBack = { galleryOpen = false }
                 )
             }
-        }
+
+            // Bilgi / uyari katmani
+            if (info != null && viewerFile == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xE6000000))
+                        .clickable { info = null },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = info!!,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(24.dp)
+                    )
+                }
+            }
+
+            // Tam ekran goruntuleyici (en ustte)
+            viewerFile?.let { f ->
+                val bmp = remember(f.path) { BitmapFactory.decodeFile(f.absolutePath) }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .clickable { viewerFile = null },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (bmp != null) {
+                        Image(
+                            bitmap = bmp.asImageBitmap(),
+                            contentDescription = "Foto",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-/** Merkeze geldiginde buyuyen daire buton; uzerinde buyuk yazi. */
+/** Ust bolum: kayitli foto sayisi; dokununca galeri acilir. */
 @Composable
-private fun CircleAction(
-    text: String,
-    danger: Boolean = false,
-    onClick: () -> Unit
-) {
+private fun PhotoHeader(count: Int, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(52.dp)
+            .clip(RoundedCornerShape(26.dp))
+            .background(Color(0xFF23202E))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "📷 Fotoğraflar ($count)",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp
+        )
+    }
+}
+
+/** Galeri ekrani: kayitli fotograflar; dokununca tam ekran. */
+@Composable
+private fun GalleryScreen(photos: List<File>, onOpen: (File) -> Unit, onBack: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 30.dp, bottom = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF2A2740))
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center
+            ) { Text("‹ Geri", color = Color.White, fontSize = 14.sp) }
+
+            if (photos.isEmpty()) {
+                Text("Henüz fotoğraf yok", color = Color(0xFF9A96A8), fontSize = 14.sp)
+            } else {
+                photos.forEach { f -> PhotoThumb(f, size = 150.dp) { onOpen(f) } }
+            }
+        }
+    }
+}
+
+/** Kucuk kare fotograf onizleme. */
+@Composable
+private fun PhotoThumb(file: File, size: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
+    val bmp = remember(file.path) { BitmapFactory.decodeFile(file.absolutePath) }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.7f)
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFF16181F))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bmp != null) {
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = "Foto",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+
+/** Merkeze geldiginde buyuyen daire buton. */
+@Composable
+private fun CircleAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
     val bg = if (danger) Color(0xFFFF5C6C) else MaterialTheme.colors.primary
     Box(
         modifier = Modifier
@@ -280,8 +389,18 @@ private fun CircleAction(
     }
 }
 
+private fun vibrate(context: Context) {
+    val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
+    v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+}
+
 private const val KEY_MSG = "msg"
 private const val KEY_PIN = "pin"
 
-/** Listedeki komut butonu sayisi (rotary snap sinir kontrolu icin). */
-private const val ITEM_COUNT = 9
+/** Listedeki oge sayisi (foto basligi + 9 komut) — rotary snap siniri. */
+private const val ITEM_COUNT = 10

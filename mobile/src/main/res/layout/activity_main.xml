@@ -1,249 +1,233 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:fillViewport="true">
+    android:background="@android:color/transparent"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="24dp">
 
-        <!-- Hero -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- HERO -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="?attr/colorPrimaryContainer"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="0dp">
+            android:orientation="vertical"
+            android:background="@drawable/card_hero"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="26dp"
+            android:paddingBottom="26dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="22dp">
+                android:text="UZAKTAN KONTROL"
+                android:textColor="#D9CFFF"
+                android:textSize="11sp"
+                android:letterSpacing="0.22"
+                android:fontFamily="sans-serif-medium" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Wear Commands"
-                    android:textColor="?attr/colorOnPrimaryContainer"
-                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                    android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Wear Commands"
+                android:textColor="#FFFFFF"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:letterSpacing="-0.02"
+                android:fontFamily="sans-serif" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Telefon ↔ Saat uzaktan yönetim"
-                    android:textColor="?attr/colorOnPrimaryContainer"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:alpha="0.85" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Telefon ↔ Saat · komut &amp; güvenlik"
+                android:textColor="#E7DEFF"
+                android:textSize="14sp"
+                android:alpha="0.9" />
+        </LinearLayout>
 
-        <!-- Baglanti durumu -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- STATUS -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/chip_status"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp">
 
-            <LinearLayout
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="●"
+                android:textColor="#3FE0A0"
+                android:textSize="13sp"
+                android:paddingEnd="10dp" />
+
+            <TextView
+                android:id="@+id/statusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="●"
-                    android:textColor="@color/ok"
-                    android:textSize="14sp"
-                    android:paddingEnd="10dp" />
-
-                <TextView
-                    android:id="@+id/statusText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Bagli saat araniyor..."
-                    android:textColor="?attr/colorOnSurface"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                android:text="Bagli saat araniyor..."
+                android:textColor="#C9C4DE"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <!-- KURULUM -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="24dp"
             android:layout_marginStart="6dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/setup_title"
-            android:textColor="?attr/colorPrimary"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:letterSpacing="0.06" />
+            android:layout_marginBottom="10dp"
+            android:text="KURULUM"
+            android:textColor="#B39DFF"
+            android:textSize="12sp"
+            android:letterSpacing="0.14"
+            android:fontFamily="sans-serif-medium" />
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
+            android:orientation="vertical"
+            android:background="@drawable/card_surface"
+            android:padding="14dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="14dp">
+            <TextView
+                android:id="@+id/permissionsButton"
+                style="@style/AppTile"
+                android:background="@drawable/btn_ghost"
+                android:drawableStart="@drawable/ic_security"
+                android:text="@string/btn_permissions" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/permissionsButton"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/btn_permissions"
-                    app:icon="@drawable/ic_security"
-                    app:iconGravity="textStart" />
+            <TextView
+                android:id="@+id/adminButton"
+                style="@style/AppTile"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_ghost"
+                android:drawableStart="@drawable/ic_admin"
+                android:text="@string/btn_admin" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/adminButton"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/btn_admin"
-                    app:icon="@drawable/ic_admin"
-                    app:iconGravity="textStart" />
+            <TextView
+                android:id="@+id/batteryButton"
+                style="@style/AppTile"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_ghost"
+                android:drawableStart="@drawable/ic_battery"
+                android:text="@string/btn_battery" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/batteryButton"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/btn_battery"
-                    app:icon="@drawable/ic_battery"
-                    app:iconGravity="textStart" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/pinButton"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/btn_pin"
-                    app:icon="@drawable/ic_pin"
-                    app:iconGravity="textStart" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:id="@+id/pinButton"
+                style="@style/AppTile"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_danger"
+                android:drawableStart="@drawable/ic_pin"
+                android:text="@string/btn_pin" />
+        </LinearLayout>
 
         <!-- TEST -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="24dp"
             android:layout_marginStart="6dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/test_title"
-            android:textColor="?attr/colorPrimary"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:letterSpacing="0.06" />
+            android:layout_marginBottom="10dp"
+            android:text="TEST"
+            android:textColor="#B39DFF"
+            android:textSize="12sp"
+            android:letterSpacing="0.14"
+            android:fontFamily="sans-serif-medium" />
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
+            android:orientation="vertical"
+            android:background="@drawable/card_surface"
+            android:padding="14dp">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/pingButton"
+                style="@style/AppTile"
+                android:background="@drawable/btn_ghost"
+                android:drawableStart="@drawable/ic_bolt"
+                android:text="@string/btn_send_ping" />
+
+            <TextView
+                android:id="@+id/vibrateButton"
+                style="@style/AppTile"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_ghost"
+                android:drawableStart="@drawable/ic_vibration"
+                android:text="@string/btn_send_vibrate" />
+
+            <EditText
+                android:id="@+id/commandInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="14dp">
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_input"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:hint="@string/hint_command"
+                android:textColorHint="#6E6890"
+                android:textColor="#ECEAF6"
+                android:inputType="textCapCharacters"
+                android:importantForAutofill="no" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/pingButton"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/btn_send_ping"
-                    app:icon="@drawable/ic_bolt"
-                    app:iconGravity="textStart" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/vibrateButton"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/btn_send_vibrate"
-                    app:icon="@drawable/ic_vibration"
-                    app:iconGravity="textStart" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="@string/hint_command">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/commandInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textCapCharacters"
-                        android:importantForAutofill="no" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/customButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/btn_send_custom"
-                    app:icon="@drawable/ic_send"
-                    app:iconGravity="textStart" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:id="@+id/customButton"
+                style="@style/AppTile"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_primary"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:drawableTint="#FFFFFF"
+                android:drawableStart="@drawable/ic_send"
+                android:text="@string/btn_send_custom" />
+        </LinearLayout>
 
         <!-- LOG -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="24dp"
             android:layout_marginStart="6dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/log_title"
-            android:textColor="?attr/colorPrimary"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:letterSpacing="0.06" />
+            android:layout_marginBottom="10dp"
+            android:text="GELEN / GİDEN"
+            android:textColor="#B39DFF"
+            android:textSize="12sp"
+            android:letterSpacing="0.14"
+            android:fontFamily="sans-serif-medium" />
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
+            android:background="@drawable/card_surface"
+            android:padding="16dp">
 
             <TextView
                 android:id="@+id/logText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp"
                 android:text="@string/log_empty"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="#9A94BC"
                 android:fontFamily="monospace"
                 android:textSize="13sp" />
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</ScrollView>
