@@ -12,7 +12,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Colors
 import androidx.wear.compose.material.MaterialTheme
@@ -146,21 +146,32 @@ private fun WearApp() {
         }
         LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
 
+        var lastRotary by remember { mutableStateOf(0L) }
+
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         ScalingLazyColumn(
             state = listState,
+            // Parmakla kaydirinca en yakin buton ortaya oturur (snap).
+            flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .onRotaryScrollEvent {
-                    scope.launch { listState.scrollBy(it.verticalScrollPixels) }
+                .onRotaryScrollEvent { event ->
+                    // Kadran bir tik donunce bir sonraki buton tam ortaya gelir.
+                    val now = System.currentTimeMillis()
+                    if (now - lastRotary > 120) {
+                        lastRotary = now
+                        val step = if (event.verticalScrollPixels > 0) 1 else -1
+                        val target = (listState.centerItemIndex + step).coerceIn(0, ITEM_COUNT - 1)
+                        scope.launch { listState.animateScrollToItem(target) }
+                    }
                     true
                 }
                 .focusRequester(focusRequester)
                 .focusable(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(top = 40.dp, bottom = 40.dp)
+            contentPadding = PaddingValues(top = 60.dp, bottom = 60.dp)
         ) {
             item {
                 CircleAction(if (torchOn) "Fener\nKAPAT" else "Fener\nAÇ") {
@@ -271,3 +282,6 @@ private fun CircleAction(
 
 private const val KEY_MSG = "msg"
 private const val KEY_PIN = "pin"
+
+/** Listedeki komut butonu sayisi (rotary snap sinir kontrolu icin). */
+private const val ITEM_COUNT = 9
