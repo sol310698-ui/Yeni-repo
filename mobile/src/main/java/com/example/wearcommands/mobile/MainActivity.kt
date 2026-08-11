@@ -63,6 +63,9 @@ class MainActivity : AppCompatActivity() {
 
         observeIncoming()
         refreshConnectedNodes()
+
+        // Sarj cikisini yakalamak icin kalici koruma servisini baslat.
+        runCatching { MonitorService.start(this) }
     }
 
     private fun observeIncoming() {

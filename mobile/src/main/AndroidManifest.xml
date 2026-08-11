@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
@@ -76,12 +78,22 @@
             </intent-filter>
         </service>
 
-        <!-- Sarj cikarilinca saate uyari -->
+        <!-- Sarj cikisini yakalayan kalici koruma servisi (runtime alici) -->
+        <service
+            android:name=".MonitorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="anti_theft_power_monitor" />
+        </service>
+
+        <!-- Boot sonrasi korumayi tekrar baslat -->
         <receiver
-            android:name=".PowerReceiver"
+            android:name=".BootReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
