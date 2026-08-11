@@ -4,6 +4,7 @@
     <string name="title">Telefon &#8596; Saat komut kontrolu</string>
 
     <string name="setup_title">Kurulum</string>
+    <string name="btn_pair">Eşleştir (saatteki QR\'ı tara)</string>
     <string name="btn_permissions">Izinleri ver (kamera, mikrofon, konum, bildirim)</string>
     <string name="btn_admin">Cihaz yoneticisini etkinlestir (kilit/sil)</string>
     <string name="btn_battery">Pil optimizasyonundan haric tut</string>

@@ -107,8 +107,18 @@
             android:padding="14dp">
 
             <TextView
+                android:id="@+id/pairButton"
+                style="@style/AppTile"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:drawableTint="#FFFFFF"
+                android:drawableStart="@drawable/ic_security"
+                android:text="@string/btn_pair" />
+
+            <TextView
                 android:id="@+id/permissionsButton"
                 style="@style/AppTile"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/btn_ghost"
                 android:drawableStart="@drawable/ic_security"
                 android:text="@string/btn_permissions" />

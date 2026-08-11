@@ -62,6 +62,7 @@ import androidx.wear.input.RemoteInputIntentHelper
 import com.example.wearcommands.shared.CommandBus
 import com.example.wearcommands.shared.CommandProtocol
 import com.example.wearcommands.shared.CommandSender
+import com.example.wearcommands.shared.CryptoManager
 import com.example.wearcommands.shared.PhotoBus
 import kotlinx.coroutines.launch
 import java.io.File
@@ -100,6 +101,7 @@ private fun WearApp() {
         var viewerFile by remember { mutableStateOf<File?>(null) }
         var previewFile by remember { mutableStateOf<File?>(null) }
         var info by remember { mutableStateOf<String?>(null) }
+        var settingsOpen by remember { mutableStateOf(false) }
         var lastRotary by remember { mutableStateOf(0L) }
 
         fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
@@ -179,6 +181,7 @@ private fun WearApp() {
                 contentPadding = PaddingValues(top = 60.dp, bottom = 60.dp)
             ) {
                 item { PhotoHeader(count = photos.size) { galleryOpen = true } }
+                item { WideChip("⚙ Ayarlar") { settingsOpen = true } }
                 item {
                     CircleAction(if (torchOn) "Fener\nKAPAT" else "Fener\nAÇ") {
                         torchOn = !torchOn
@@ -243,6 +246,11 @@ private fun WearApp() {
                     onOpen = { viewerFile = it },
                     onBack = { galleryOpen = false }
                 )
+            }
+
+            // Ayarlar (eslesme QR)
+            if (settingsOpen && viewerFile == null) {
+                SettingsScreen(context) { settingsOpen = false }
             }
 
             // Bilgi / uyari katmani
@@ -389,6 +397,80 @@ private fun CircleAction(text: String, danger: Boolean = false, onClick: () -> U
     }
 }
 
+/** Genis yuvarlak kucuk buton (ust bolum / ayar butonlari). */
+@Composable
+private fun WideChip(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.82f)
+            .height(48.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFF23202E))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    }
+}
+
+/** Ayarlar / eslesme ekrani: gizli anahtar QR olarak gosterilir. */
+@Composable
+private fun SettingsScreen(context: Context, onBack: () -> Unit) {
+    // Sadece ayarlari acmak sifrelemeyi baslatmaz; anahtar "Etkinlestir"
+    // denilene kadar aktif edilmez (yoksa eslesmeden komutlar kirilir).
+    var activeSecret by remember { mutableStateOf(CryptoManager.getSecret(context)) }
+    var secret by remember { mutableStateOf(activeSecret ?: CryptoManager.generateSecret()) }
+    val active = activeSecret != null && activeSecret == secret
+    val qr = remember(secret) { QrUtil.encode(secret, 360) }
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 26.dp, bottom = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Eşleştirme", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            Text(
+                text = if (active) "Şifreleme: AKTİF" else "Şifreleme: PASİF",
+                color = if (active) Color(0xFF3ED598) else Color(0xFFFFB020),
+                fontSize = 12.sp
+            )
+            qr?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = "Eslesme QR",
+                    modifier = Modifier.fillMaxWidth(0.72f).aspectRatio(1f).clip(RoundedCornerShape(8.dp))
+                )
+            }
+            Text(
+                "1) Telefonda QR'ı tara  2) Etkinleştir",
+                color = Color.White,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            if (!active) {
+                WideChip("Etkinleştir") {
+                    CryptoManager.setSecret(context, secret)
+                    activeSecret = secret
+                }
+            }
+            WideChip("Yeni anahtar") { secret = CryptoManager.generateSecret() }
+            if (activeSecret != null) {
+                WideChip("Şifrelemeyi kapat") {
+                    CryptoManager.clear(context)
+                    activeSecret = null
+                    secret = CryptoManager.generateSecret()
+                }
+            }
+            WideChip("‹ Geri", onBack)
+        }
+    }
+}
+
 private fun vibrate(context: Context) {
     val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
@@ -402,5 +484,5 @@ private fun vibrate(context: Context) {
 private const val KEY_MSG = "msg"
 private const val KEY_PIN = "pin"
 
-/** Listedeki oge sayisi (foto basligi + 9 komut) — rotary snap siniri. */
-private const val ITEM_COUNT = 10
+/** Listedeki oge sayisi (foto + ayarlar + 9 komut) — rotary snap siniri. */
+private const val ITEM_COUNT = 11

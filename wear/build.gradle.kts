@@ -70,4 +70,7 @@ dependencies {
 
     // Saatte metin/PIN girisi (klavye/ses) icin.
     implementation("androidx.wear:wear-input:1.1.0")
+
+    // Eslesme QR kodu uretimi.
+    implementation("com.google.zxing:core:3.5.3")
 }

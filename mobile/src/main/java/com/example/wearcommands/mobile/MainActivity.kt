@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.pairButton.setOnClickListener { startActivity(Intent(this, ScanActivity::class.java)) }
         binding.permissionsButton.setOnClickListener { requestAllPermissions() }
         binding.adminButton.setOnClickListener { requestDeviceAdmin() }
         binding.batteryButton.setOnClickListener { openBatterySettings() }

@@ -45,6 +45,11 @@
             android:launchMode="singleTop"
             android:theme="@style/Theme.WearCommands" />
 
+        <activity
+            android:name=".ScanActivity"
+            android:exported="false"
+            android:theme="@style/Theme.WearCommands" />
+
         <!-- Cihaz Yoneticisi (kilit / veri silme) -->
         <receiver
             android:name=".PhoneAdminReceiver"

@@ -26,13 +26,14 @@ class CommandListenerService : WearableListenerService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onMessageReceived(event: MessageEvent) {
+        val data = CryptoManager.decrypt(applicationContext, event.data)
         when (event.path) {
             CommandProtocol.PATH_PHOTO -> {
-                PhotoBus.publish(event.data)
+                PhotoBus.publish(data)
                 return
             }
             CommandProtocol.PATH_COMMAND -> {
-                val command = String(event.data, Charsets.UTF_8)
+                val command = String(data, Charsets.UTF_8)
                 CommandBus.publish(command)
                 handleBuiltIn(command)
                 CommandRegistry.executor?.onCommand(applicationContext, command)

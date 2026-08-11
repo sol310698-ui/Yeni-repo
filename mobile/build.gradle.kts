@@ -66,4 +66,8 @@ dependencies {
     implementation("androidx.camera:camera-camera2:$cameraX")
     implementation("androidx.camera:camera-lifecycle:$cameraX")
     implementation("androidx.camera:camera-video:$cameraX")
+    implementation("androidx.camera:camera-view:$cameraX")
+
+    // QR tarama (eslesme).
+    implementation("com.google.zxing:core:3.5.3")
 }

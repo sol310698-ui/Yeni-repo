@@ -26,10 +26,11 @@ object CommandSender {
         val nodeClient = Wearable.getNodeClient(appContext)
         val messageClient = Wearable.getMessageClient(appContext)
 
+        val out = CryptoManager.encrypt(appContext, payload)
         val nodes = nodeClient.connectedNodes.await()
         var delivered = 0
         for (node in nodes) {
-            messageClient.sendMessage(node.id, path, payload).await()
+            messageClient.sendMessage(node.id, path, out).await()
             delivered++
         }
         return delivered
