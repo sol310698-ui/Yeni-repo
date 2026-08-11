@@ -51,6 +51,10 @@ class PhoneCommandExecutor : CommandExecutor {
 
             CommandProtocol.CMD_PHOTO -> PhotoService.capture(ctx, front)
 
+            CommandProtocol.CMD_SCREENSHOT ->
+                if (ScreenCaptureService.isActive) ScreenCaptureService.capture(ctx)
+                else error(ctx, "Once telefonda 'Ekran izni' ver")
+
             CommandProtocol.CMD_WIPE ->
                 if (PinStore.verify(ctx, value)) {
                     if (AdminHelper.wipe(ctx)) status(ctx, "Silme baslatildi")

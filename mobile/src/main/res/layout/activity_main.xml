@@ -140,6 +140,14 @@
                 android:text="@string/btn_battery" />
 
             <TextView
+                android:id="@+id/screenshotButton"
+                style="@style/AppTile"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/btn_ghost"
+                android:drawableStart="@drawable/ic_bolt"
+                android:text="@string/btn_screen" />
+
+            <TextView
                 android:id="@+id/pinButton"
                 style="@style/AppTile"
                 android:layout_marginTop="10dp"

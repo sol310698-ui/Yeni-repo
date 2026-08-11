@@ -45,6 +45,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -154,7 +155,11 @@ private fun WearApp() {
                 previewFile = f
             }
         }
-        LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+        LaunchedEffect(viewerFile, galleryOpen, settingsOpen) {
+            if (viewerFile == null && !galleryOpen && !settingsOpen) {
+                runCatching { focusRequester.requestFocus() }
+            }
+        }
 
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
 
@@ -202,6 +207,7 @@ private fun WearApp() {
                     }
                 }
                 item { CircleAction("Foto\nçek") { send(CommandProtocol.CMD_PHOTO) } }
+                item { CircleAction("Ekran\ngörüntüsü") { send(CommandProtocol.CMD_SCREENSHOT) } }
                 item {
                     CircleAction(if (audioOn) "Ses\nDURDUR" else "Ses\nkaydı") {
                         audioOn = !audioOn
@@ -273,25 +279,37 @@ private fun WearApp() {
                 }
             }
 
-            // Tam ekran goruntuleyici (en ustte)
+            // Tam ekran goruntuleyici (en ustte) — kadranla zoom
             viewerFile?.let { f ->
                 val bmp = remember(f.path) { BitmapFactory.decodeFile(f.absolutePath) }
+                var scale by remember(f.path) { mutableStateOf(1f) }
+                val viewerFocus = remember { FocusRequester() }
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black)
-                        .clickable { viewerFile = null },
+                        .onRotaryScrollEvent { event ->
+                            val delta = if (event.verticalScrollPixels > 0) 0.2f else -0.2f
+                            scale = (scale + delta).coerceIn(1f, 5f)
+                            true
+                        }
+                        .focusRequester(viewerFocus)
+                        .focusable()
+                        .clickable { if (scale > 1f) scale = 1f else viewerFile = null },
                     contentAlignment = Alignment.Center
                 ) {
                     if (bmp != null) {
                         Image(
                             bitmap = bmp.asImageBitmap(),
                             contentDescription = "Foto",
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(scaleX = scale, scaleY = scale),
                             contentScale = ContentScale.Fit
                         )
                     }
                 }
+                LaunchedEffect(f.path) { runCatching { viewerFocus.requestFocus() } }
             }
         }
     }
@@ -484,5 +502,5 @@ private fun vibrate(context: Context) {
 private const val KEY_MSG = "msg"
 private const val KEY_PIN = "pin"
 
-/** Listedeki oge sayisi (foto + ayarlar + 9 komut) — rotary snap siniri. */
-private const val ITEM_COUNT = 11
+/** Listedeki oge sayisi (foto + ayarlar + 10 komut) — rotary snap siniri. */
+private const val ITEM_COUNT = 12

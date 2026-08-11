@@ -44,6 +44,15 @@ class MainActivity : AppCompatActivity() {
             else toast("Verilmeyen izin: ${denied.size}")
         }
 
+    private val projectionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (result.resultCode == RESULT_OK && data != null) {
+                ScreenCaptureService.start(this, result.resultCode, data)
+                toast("Ekran izni verildi")
+            } else toast("Ekran izni reddedildi")
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -53,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         binding.permissionsButton.setOnClickListener { requestAllPermissions() }
         binding.adminButton.setOnClickListener { requestDeviceAdmin() }
         binding.batteryButton.setOnClickListener { openBatterySettings() }
+        binding.screenshotButton.setOnClickListener { requestScreenAccess() }
         binding.pinButton.setOnClickListener { showPinDialog() }
 
         binding.pingButton.setOnClickListener { send(CommandProtocol.CMD_PING) }
@@ -111,6 +121,12 @@ class MainActivity : AppCompatActivity() {
             )
         }
         runCatching { startActivity(intent) }.onFailure { toast("Acilamadi: ${it.message}") }
+    }
+
+    private fun requestScreenAccess() {
+        val mpm = getSystemService(android.media.projection.MediaProjectionManager::class.java)
+        runCatching { projectionLauncher.launch(mpm.createScreenCaptureIntent()) }
+            .onFailure { toast("Acilamadi: ${it.message}") }
     }
 
     private fun openBatterySettings() {

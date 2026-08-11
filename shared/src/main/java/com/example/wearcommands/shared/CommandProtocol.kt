@@ -33,6 +33,7 @@ object CommandProtocol {
     const val CMD_VIDEO_START = "VIDEO_START"
     const val CMD_VIDEO_STOP = "VIDEO_STOP"
     const val CMD_PHOTO = "PHOTO"
+    const val CMD_SCREENSHOT = "SCREENSHOT"
 
     /** Parametreli: "MSG:<ekranda gosterilecek metin>". */
     const val CMD_MESSAGE = "MSG"
