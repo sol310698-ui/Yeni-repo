@@ -145,6 +145,21 @@ class CaptureActivity : AppCompatActivity() {
         const val EXTRA_REASON = "reason"
 
         private fun launch(context: Context, front: Boolean, reason: String?) {
+            val app = context.applicationContext
+            // Arka plandayken Activity ancak "Ustte gosterme" izniyle acilir.
+            val canBackgroundStart = MobileApp.isForeground ||
+                android.provider.Settings.canDrawOverlays(app)
+            if (!canBackgroundStart) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    runCatching {
+                        CommandSender.send(
+                            app,
+                            CommandProtocol.build(CommandProtocol.RSP_ERROR, "Telefonda 'Ustte gosterme' iznini ver")
+                        )
+                    }
+                }
+                return
+            }
             val i = Intent(context, CaptureActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 .putExtra(EXTRA_FRONT, front)
