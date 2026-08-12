@@ -17,7 +17,7 @@ class PhoneAdminReceiver : DeviceAdminReceiver() {
     override fun onPasswordFailed(context: Context, intent: Intent, user: UserHandle) {
         super.onPasswordFailed(context, intent, user)
         runCatching {
-            PhotoService.captureSecurity(context.applicationContext, "Yanlis sifre")
+            CaptureActivity.captureSecurity(context.applicationContext, "Yanlis sifre")
         }
     }
 

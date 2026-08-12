@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         binding.permissionsButton.setOnClickListener { requestAllPermissions() }
         binding.adminButton.setOnClickListener { requestDeviceAdmin() }
         binding.batteryButton.setOnClickListener { openBatterySettings() }
+        binding.overlayButton.setOnClickListener { requestOverlay() }
         binding.screenshotButton.setOnClickListener { requestScreenAccess() }
         binding.pinButton.setOnClickListener { showPinDialog() }
 
@@ -121,6 +122,15 @@ class MainActivity : AppCompatActivity() {
             )
         }
         runCatching { startActivity(intent) }.onFailure { toast("Acilamadi: ${it.message}") }
+    }
+
+    private fun requestOverlay() {
+        if (Settings.canDrawOverlays(this)) { toast("Zaten verili"); return }
+        runCatching {
+            startActivity(
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            )
+        }.onFailure { toast("Acilamadi: ${it.message}") }
     }
 
     private fun requestScreenAccess() {
