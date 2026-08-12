@@ -148,7 +148,7 @@ private fun WearApp() {
                 val (name, value) = CommandProtocol.split(command)
                 when (name) {
                     CommandProtocol.RSP_LOCATION -> info = "Konum:\n$value"
-                    CommandProtocol.RSP_ERROR -> toast("Hata: $value")
+                    CommandProtocol.RSP_ERROR -> info = "⚠ Hata:\n$value"
                     CommandProtocol.RSP_STATUS -> toast(value)
                     CommandProtocol.RSP_ALERT -> { vibrate(context); info = "⚠\n$value" }
                 }

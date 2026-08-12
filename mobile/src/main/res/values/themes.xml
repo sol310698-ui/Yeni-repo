@@ -10,12 +10,9 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- Gorunmez yakalama Activity'si -->
+    <!-- Yakalama Activity'si: opak siyah (kamera daha kararli calisir) -->
     <style name="Theme.Capture" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/black</item>
         <item name="android:windowNoTitle">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:backgroundDimEnabled">false</item>
     </style>
 </resources>
