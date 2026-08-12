@@ -33,7 +33,8 @@ class PhotoService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
         startForegroundCompat()
         val front = intent?.getBooleanExtra(EXTRA_FRONT, false) ?: false
-        capture(front)
+        val reason = intent?.getStringExtra(EXTRA_REASON)
+        capture(front, reason)
         return START_NOT_STICKY
     }
 
@@ -46,7 +47,7 @@ class PhotoService : LifecycleService() {
         }
     }
 
-    private fun capture(front: Boolean) {
+    private fun capture(front: Boolean, reason: String?) {
         val providerFuture = ProcessCameraProvider.getInstance(this)
         providerFuture.addListener({
             val provider = runCatching { providerFuture.get() }.getOrNull()
@@ -71,7 +72,7 @@ class PhotoService : LifecycleService() {
                         val jpeg = toDownscaledJpeg(image)
                         image.close()
                         runCatching { provider.unbindAll() }
-                        sendPhoto(jpeg)
+                        sendPhoto(jpeg, reason)
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -101,14 +102,24 @@ class PhotoService : LifecycleService() {
         return out.toByteArray()
     }
 
-    private fun sendPhoto(jpeg: ByteArray) {
+    private fun sendPhoto(jpeg: ByteArray, reason: String?) {
         io.launch {
-            runCatching { CommandSender.sendBytes(applicationContext, CommandProtocol.PATH_PHOTO, jpeg) }
-            runCatching {
-                CommandSender.send(
-                    applicationContext,
-                    CommandProtocol.build(CommandProtocol.RSP_STATUS, "Foto cekildi")
-                )
+            if (reason != null) {
+                // Guvenlik selfie: sebep + 0x00 + JPEG -> /security yolu.
+                val rb = reason.toByteArray(Charsets.UTF_8)
+                val payload = ByteArray(rb.size + 1 + jpeg.size)
+                System.arraycopy(rb, 0, payload, 0, rb.size)
+                payload[rb.size] = 0
+                System.arraycopy(jpeg, 0, payload, rb.size + 1, jpeg.size)
+                runCatching { CommandSender.sendBytes(applicationContext, CommandProtocol.PATH_SECURITY, payload) }
+            } else {
+                runCatching { CommandSender.sendBytes(applicationContext, CommandProtocol.PATH_PHOTO, jpeg) }
+                runCatching {
+                    CommandSender.send(
+                        applicationContext,
+                        CommandProtocol.build(CommandProtocol.RSP_STATUS, "Foto cekildi")
+                    )
+                }
             }
             stopSelf()
         }
@@ -130,9 +141,18 @@ class PhotoService : LifecycleService() {
     companion object {
         private const val NOTIF_ID = 4303
         const val EXTRA_FRONT = "front"
+        const val EXTRA_REASON = "reason"
 
         fun capture(context: Context, front: Boolean) {
             val i = Intent(context, PhotoService::class.java).putExtra(EXTRA_FRONT, front)
+            ContextCompat.startForegroundService(context, i)
+        }
+
+        /** On kameradan guvenlik selfie'si cekip saate /security ile gonderir. */
+        fun captureSecurity(context: Context, reason: String) {
+            val i = Intent(context, PhotoService::class.java)
+                .putExtra(EXTRA_FRONT, true)
+                .putExtra(EXTRA_REASON, reason)
             ContextCompat.startForegroundService(context, i)
         }
     }

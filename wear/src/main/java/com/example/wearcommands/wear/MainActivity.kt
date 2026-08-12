@@ -65,8 +65,12 @@ import com.example.wearcommands.shared.CommandProtocol
 import com.example.wearcommands.shared.CommandSender
 import com.example.wearcommands.shared.CryptoManager
 import com.example.wearcommands.shared.PhotoBus
+import com.example.wearcommands.shared.SecurityBus
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,7 +102,9 @@ private fun WearApp() {
         var videoOn by remember { mutableStateOf(false) }
 
         var photos by remember { mutableStateOf(PhotoStore.list(context)) }
+        var security by remember { mutableStateOf(SecurityStore.list(context)) }
         var galleryOpen by remember { mutableStateOf(false) }
+        var securityOpen by remember { mutableStateOf(false) }
         var viewerFile by remember { mutableStateOf<File?>(null) }
         var previewFile by remember { mutableStateOf<File?>(null) }
         var info by remember { mutableStateOf<String?>(null) }
@@ -155,8 +161,16 @@ private fun WearApp() {
                 previewFile = f
             }
         }
-        LaunchedEffect(viewerFile, galleryOpen, settingsOpen) {
-            if (viewerFile == null && !galleryOpen && !settingsOpen) {
+        LaunchedEffect(Unit) {
+            SecurityBus.incoming.collect { item ->
+                val f = SecurityStore.save(context, item.reason, item.jpeg)
+                security = SecurityStore.list(context)
+                vibrate(context)
+                previewFile = f
+            }
+        }
+        LaunchedEffect(viewerFile, galleryOpen, settingsOpen, securityOpen) {
+            if (viewerFile == null && !galleryOpen && !settingsOpen && !securityOpen) {
                 runCatching { focusRequester.requestFocus() }
             }
         }
@@ -186,6 +200,7 @@ private fun WearApp() {
                 contentPadding = PaddingValues(top = 60.dp, bottom = 60.dp)
             ) {
                 item { PhotoHeader(count = photos.size) { galleryOpen = true } }
+                item { WideChip("🛡 Güvenlik (${security.size})") { securityOpen = true } }
                 item { WideChip("⚙ Ayarlar") { settingsOpen = true } }
                 item {
                     CircleAction(if (torchOn) "Fener\nKAPAT" else "Fener\nAÇ") {
@@ -228,7 +243,7 @@ private fun WearApp() {
             }
 
             // Yeni foto kucuk onizleme (dokun -> tam ekran)
-            if (previewFile != null && viewerFile == null && !galleryOpen) {
+            if (previewFile != null && viewerFile == null && !galleryOpen && !securityOpen && !settingsOpen) {
                 val f = previewFile!!
                 Box(
                     modifier = Modifier
@@ -251,6 +266,15 @@ private fun WearApp() {
                     photos = photos,
                     onOpen = { viewerFile = it },
                     onBack = { galleryOpen = false }
+                )
+            }
+
+            // Guvenlik selfie'leri
+            if (securityOpen && viewerFile == null) {
+                SecurityScreen(
+                    entries = security,
+                    onOpen = { viewerFile = it },
+                    onBack = { securityOpen = false }
                 )
             }
 
@@ -362,6 +386,55 @@ private fun GalleryScreen(photos: List<File>, onOpen: (File) -> Unit, onBack: ()
                 Text("Henüz fotoğraf yok", color = Color(0xFF9A96A8), fontSize = 14.sp)
             } else {
                 photos.forEach { f -> PhotoThumb(f, size = 150.dp) { onOpen(f) } }
+            }
+        }
+    }
+}
+
+/** Guvenlik selfie'leri ekrani: sebep + zaman etiketli. */
+@Composable
+private fun SecurityScreen(
+    entries: List<SecurityStore.Entry>,
+    onOpen: (File) -> Unit,
+    onBack: () -> Unit
+) {
+    val fmt = remember { SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()) }
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 26.dp, bottom = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF2A2740))
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center
+            ) { Text("‹ Geri", color = Color.White, fontSize = 14.sp) }
+
+            Text("🛡 Güvenlik", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+
+            if (entries.isEmpty()) {
+                Text("Kayıt yok", color = Color(0xFF9A96A8), fontSize = 14.sp)
+            } else {
+                entries.forEach { e ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        PhotoThumb(e.file, size = 150.dp) { onOpen(e.file) }
+                        Text(
+                            "${e.reason} • ${fmt.format(Date(e.time))}",
+                            color = Color(0xFFFF8A95),
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -502,5 +575,5 @@ private fun vibrate(context: Context) {
 private const val KEY_MSG = "msg"
 private const val KEY_PIN = "pin"
 
-/** Listedeki oge sayisi (foto + ayarlar + 10 komut) — rotary snap siniri. */
-private const val ITEM_COUNT = 12
+/** Listedeki oge sayisi (foto + guvenlik + ayarlar + 10 komut) — rotary snap. */
+private const val ITEM_COUNT = 13

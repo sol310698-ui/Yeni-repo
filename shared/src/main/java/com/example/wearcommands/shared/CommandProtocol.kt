@@ -15,6 +15,12 @@ object CommandProtocol {
     /** Fotograf (JPEG byte[]) gonderilen yol (telefon -> saat). */
     const val PATH_PHOTO = "/photo"
 
+    /**
+     * Guvenlik selfie'si (yanlis sifre / sarj cikisi). Payload:
+     * sebep(UTF-8) + 0x00 ayirici + JPEG.
+     */
+    const val PATH_SECURITY = "/security"
+
     // --- Temel test komutlari ---
     const val CMD_PING = "PING"
     const val CMD_PONG = "PONG"

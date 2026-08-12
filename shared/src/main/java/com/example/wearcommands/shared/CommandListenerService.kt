@@ -32,6 +32,16 @@ class CommandListenerService : WearableListenerService() {
                 PhotoBus.publish(data)
                 return
             }
+            CommandProtocol.PATH_SECURITY -> {
+                val sep = data.indexOf(0.toByte())
+                if (sep > 0) {
+                    val reason = String(data.copyOfRange(0, sep), Charsets.UTF_8)
+                    SecurityBus.publish(reason, data.copyOfRange(sep + 1, data.size))
+                } else {
+                    SecurityBus.publish("Guvenlik", data)
+                }
+                return
+            }
             CommandProtocol.PATH_COMMAND -> {
                 val command = String(data, Charsets.UTF_8)
                 CommandBus.publish(command)

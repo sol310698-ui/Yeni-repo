@@ -18,6 +18,8 @@ class PowerReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_POWER_DISCONNECTED) return
         val ctx = context.applicationContext
+        // Sarj cikinca on kameradan guvenlik selfie'si de cek.
+        runCatching { PhotoService.captureSecurity(ctx, "Sarj cikisi") }
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             runCatching {
