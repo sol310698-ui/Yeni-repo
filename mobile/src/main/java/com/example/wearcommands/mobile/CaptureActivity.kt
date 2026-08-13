@@ -8,12 +8,16 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.example.wearcommands.shared.CommandProtocol
 import com.example.wearcommands.shared.CommandSender
@@ -33,6 +37,8 @@ import java.io.ByteArrayOutputStream
  */
 class CaptureActivity : AppCompatActivity() {
 
+    private lateinit var previewView: PreviewView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -45,6 +51,14 @@ class CaptureActivity : AppCompatActivity() {
                     android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
+
+        // Pencereyi 1x1 piksel + kosede yap: pratikte gorunmez.
+        window.setGravity(Gravity.TOP or Gravity.START)
+        window.attributes = window.attributes.apply { width = 1; height = 1; x = 0; y = 0 }
+
+        // Kamera icin gorunmez onizleme yuzeyi (kararli acilis).
+        previewView = PreviewView(this)
+        setContentView(previewView, ViewGroup.LayoutParams(1, 1))
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) !=
             PackageManager.PERMISSION_GRANTED
@@ -69,10 +83,13 @@ class CaptureActivity : AppCompatActivity() {
             val imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
+            }
 
             runCatching {
                 provider.unbindAll()
-                provider.bindToLifecycle(this, selector, imageCapture)
+                provider.bindToLifecycle(this, selector, preview, imageCapture)
             }.onFailure { error("Kamera baglanamadi"); finish(); return@addListener }
 
             imageCapture.takePicture(
