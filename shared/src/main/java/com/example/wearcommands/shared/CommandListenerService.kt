@@ -29,17 +29,24 @@ class CommandListenerService : WearableListenerService() {
         val data = CryptoManager.decrypt(applicationContext, event.data)
         when (event.path) {
             CommandProtocol.PATH_PHOTO -> {
+                // Once diske kaydet (UI kapali olsa bile), sonra ekrana yay.
+                MediaRegistry.sink?.savePhoto(applicationContext, data)
                 PhotoBus.publish(data)
                 return
             }
             CommandProtocol.PATH_SECURITY -> {
                 val sep = data.indexOf(0.toByte())
+                val reason: String
+                val jpeg: ByteArray
                 if (sep > 0) {
-                    val reason = String(data.copyOfRange(0, sep), Charsets.UTF_8)
-                    SecurityBus.publish(reason, data.copyOfRange(sep + 1, data.size))
+                    reason = String(data.copyOfRange(0, sep), Charsets.UTF_8)
+                    jpeg = data.copyOfRange(sep + 1, data.size)
                 } else {
-                    SecurityBus.publish("Guvenlik", data)
+                    reason = "Guvenlik"
+                    jpeg = data
                 }
+                MediaRegistry.sink?.saveSecurity(applicationContext, reason, jpeg)
+                SecurityBus.publish(reason, jpeg)
                 return
             }
             CommandProtocol.PATH_COMMAND -> {

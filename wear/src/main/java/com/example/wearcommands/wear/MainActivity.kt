@@ -155,18 +155,17 @@ private fun WearApp() {
             }
         }
         LaunchedEffect(Unit) {
-            PhotoBus.incoming.collect { jpeg ->
-                val f = PhotoStore.save(context, jpeg)
+            PhotoBus.incoming.collect {
+                // Kayit serviste (MediaSink) yapildi; burada listeyi tazele.
                 photos = PhotoStore.list(context)
-                previewFile = f
+                previewFile = photos.firstOrNull()
             }
         }
         LaunchedEffect(Unit) {
-            SecurityBus.incoming.collect { item ->
-                val f = SecurityStore.save(context, item.reason, item.jpeg)
+            SecurityBus.incoming.collect {
                 security = SecurityStore.list(context)
                 vibrate(context)
-                previewFile = f
+                previewFile = security.firstOrNull()?.file
             }
         }
         LaunchedEffect(viewerFile, galleryOpen, settingsOpen, securityOpen) {
