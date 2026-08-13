@@ -75,7 +75,7 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { WearApp() }
+        setContent { WearRoot() }
     }
 }
 
@@ -89,7 +89,7 @@ private val WearColors = Colors(
 )
 
 @Composable
-private fun WearApp() {
+private fun WearRoot() {
     MaterialTheme(colors = WearColors) {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
