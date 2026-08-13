@@ -33,8 +33,6 @@ import java.io.ByteArrayOutputStream
  */
 class CaptureActivity : AppCompatActivity() {
 
-    private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -84,6 +82,9 @@ class CaptureActivity : AppCompatActivity() {
                         val jpeg = toJpeg(image)
                         image.close()
                         runCatching { provider.unbindAll() }
+                        // Ekrani HEMEN kapat; gonderim arka planda devam etsin
+                        // (yoksa kilit ekraninda siyah ekran takili kalir).
+                        finish()
                         send(jpeg, reason)
                     }
 
@@ -114,28 +115,39 @@ class CaptureActivity : AppCompatActivity() {
     }
 
     private fun send(jpeg: ByteArray, reason: String?) {
-        io.launch {
+        val app = applicationContext
+        // Application-omurlu scope: Activity kapansa da gonderim tamamlanir.
+        bgScope.launch {
             if (reason != null) {
                 val rb = reason.toByteArray(Charsets.UTF_8)
                 val payload = ByteArray(rb.size + 1 + jpeg.size)
                 System.arraycopy(rb, 0, payload, 0, rb.size)
                 payload[rb.size] = 0
                 System.arraycopy(jpeg, 0, payload, rb.size + 1, jpeg.size)
-                runCatching { CommandSender.sendBytes(applicationContext, CommandProtocol.PATH_SECURITY, payload) }
+                runCatching { CommandSender.sendBytes(app, CommandProtocol.PATH_SECURITY, payload) }
+                    .onFailure { notifyError(app, "Foto iletilemedi: ${it.message}") }
             } else {
-                runCatching { CommandSender.sendBytes(applicationContext, CommandProtocol.PATH_PHOTO, jpeg) }
-                runCatching {
-                    CommandSender.send(applicationContext, CommandProtocol.build(CommandProtocol.RSP_STATUS, "Foto cekildi"))
-                }
+                runCatching { CommandSender.sendBytes(app, CommandProtocol.PATH_PHOTO, jpeg) }
+                    .onSuccess { count ->
+                        if (count == 0) notifyError(app, "Foto iletilemedi (bagli saat yok)")
+                        else runCatching {
+                            CommandSender.send(app, CommandProtocol.build(CommandProtocol.RSP_STATUS, "Foto cekildi"))
+                        }
+                    }
+                    .onFailure { notifyError(app, "Foto iletilemedi: ${it.message}") }
             }
-            runOnUiThread { finish() }
         }
     }
 
+    private suspend fun notifyError(app: Context, msg: String) {
+        runCatching { CommandSender.send(app, CommandProtocol.build(CommandProtocol.RSP_ERROR, msg)) }
+    }
+
     private fun error(msg: String) {
-        io.launch {
+        val app = applicationContext
+        bgScope.launch {
             runCatching {
-                CommandSender.send(applicationContext, CommandProtocol.build(CommandProtocol.RSP_ERROR, msg))
+                CommandSender.send(app, CommandProtocol.build(CommandProtocol.RSP_ERROR, msg))
             }
         }
     }
@@ -143,6 +155,9 @@ class CaptureActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_FRONT = "front"
         const val EXTRA_REASON = "reason"
+
+        /** Activity kapansa da gonderimi surduren omurlu scope. */
+        private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         private fun launch(context: Context, front: Boolean, reason: String?) {
             val app = context.applicationContext
